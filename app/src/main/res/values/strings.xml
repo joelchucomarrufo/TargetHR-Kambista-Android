@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">TargetHR - Kambista</string>
+
+    <string name="correo">Correo</string>
+    <string name="contrasena">Contraseña</string>
+    <string name="iniciar_sesion">Iniciar Sesión</string>
+
+</resources>
