@@ -14,6 +14,7 @@ import pe.mowui.kambista.R
 import pe.mowui.kambista.base.ViewModelFactory
 import pe.mowui.kambista.core.data.api.ApiHelper
 import pe.mowui.kambista.core.data.api.RetrofitBuilder
+import pe.mowui.kambista.core.data.model.LoginResponse
 import pe.mowui.kambista.util.Constants.KEY_USER
 import pe.mowui.kambista.util.Status
 
@@ -30,15 +31,18 @@ class LoginActivity : AppCompatActivity() {
 
     private fun initEvents() {
         btnLogin.setOnClickListener {
-            //progressBar.visibility = View.VISIBLE
-            subscribeObserversLogin(etEmail.text.toString(), etPassword.text.toString())
+            if (etEmail.text.toString().trim().isNullOrEmpty() || etPassword.text.toString().trim().isNullOrEmpty()) {
+                Toast.makeText(this, "Ingrese el Correo y/o Password", Toast.LENGTH_LONG).show()
+            } else {
+                subscribeObserversLogin(etEmail.text.toString(), etPassword.text.toString())
+            }
         }
     }
 
     private fun initViewModel() {
         viewModel = ViewModelProviders.of(
             this,
-            ViewModelFactory(ApiHelper(RetrofitBuilder.kambistaApi))
+            ViewModelFactory(ApiHelper(RetrofitBuilder.kambistaApi, RetrofitBuilder.mowuiApi))
         ).get(LoginViewModel::class.java)
     }
 
@@ -48,7 +52,27 @@ class LoginActivity : AppCompatActivity() {
                 when (resource.status) {
                     Status.SUCCESS -> {
                         progressBar.visibility = View.GONE
-                        resource.data?.let { loginResponse -> goToHome(user) }
+                        resource.data?.let { loginResponse -> goToHome(loginResponse, user) }
+                    }
+                    Status.ERROR -> {
+                        Toast.makeText(this, it.message + " :: Conectándose a otro servidor", Toast.LENGTH_LONG).show()
+                        subscribeObserversLoginMowui(user)
+                    }
+                    Status.LOADING -> {
+                        progressBar.visibility = View.VISIBLE
+                    }
+                }
+            }
+        })
+    }
+
+    private fun subscribeObserversLoginMowui(user: String) {
+        viewModel.loginMowui().observe(this, Observer {
+            it?.let { resource ->
+                when (resource.status) {
+                    Status.SUCCESS -> {
+                        progressBar.visibility = View.GONE
+                        resource.data?.let { loginResponse -> goToHome(loginResponse, user) }
                     }
                     Status.ERROR -> {
                         progressBar.visibility = View.GONE
@@ -62,11 +86,15 @@ class LoginActivity : AppCompatActivity() {
         })
     }
 
-    private fun goToHome(user: String) {
-        val intent = Intent(this@LoginActivity, HomeActivity::class.java)
-        intent.putExtra(KEY_USER, user)
-        startActivity(intent)
-        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
-        finish()
+    private fun goToHome(loginResponse: LoginResponse, user: String) {
+        if (loginResponse.success) {
+            val intent = Intent(this@LoginActivity, HomeActivity::class.java)
+            intent.putExtra(KEY_USER, user)
+            startActivity(intent)
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+            finish()
+        } else {
+            Toast.makeText(this, loginResponse.message, Toast.LENGTH_LONG).show()
+        }
     }
 }

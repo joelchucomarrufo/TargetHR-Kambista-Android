@@ -6,4 +6,6 @@ import pe.mowui.kambista.core.data.model.LoginRequest
 class LoginRepository(private val apiHelper: ApiHelper) {
 
     suspend fun login(loginRequest: LoginRequest) = apiHelper.login(loginRequest)
+
+    suspend fun loginMowui() = apiHelper.loginMowui()
 }

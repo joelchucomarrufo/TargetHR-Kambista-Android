@@ -19,4 +19,12 @@ class LoginViewModel(private val loginRepository: LoginRepository) : ViewModel()
         }
     }
 
+    fun loginMowui() = liveData(Dispatchers.IO) {
+        try {
+            emit(Resource.success(data = loginRepository.loginMowui()))
+        } catch (exception: Exception) {
+            emit(Resource.error(data = null, message = exception.message ?: "Error al loguearse"))
+        }
+    }
+
 }
